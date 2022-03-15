@@ -440,7 +440,7 @@ local function UnattachVehicle()
     Wait(500)
     DoScreenFadeIn(250)
     Config.Plates[ClosestPlate].AttachedVehicle = nil
-    TriggerServerEvent('qb-vehicletuning:server:SetAttachedVehicle', false, ClosestPlate)
+    TriggerServerEvent('qb-mechanicjob:server:SetAttachedVehicle', false, ClosestPlate)
 end
 
 local function SpawnListVehicle(model)
@@ -527,7 +527,7 @@ local function RepairPart(part)
                     countitem = (countitem - PartData.costs)
                     StashItems[indx].amount = countitem
                 end
-                TriggerEvent('qb-vehicletuning:client:RepaireeePart', part)
+                TriggerEvent('qb-mechanicjob:client:RepaireeePart', part)
                 TriggerServerEvent('qb-inventory:server:SaveStashItems', "mechanicstash", StashItems)
                 SetTimeout(250, function()
                     PartsMenu()
@@ -583,13 +583,13 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
             end
         end
     end)
-    QBCore.Functions.TriggerCallback('qb-vehicletuning:server:GetAttachedVehicle', function(plates)
+    QBCore.Functions.TriggerCallback('qb-mechanicjob:server:GetAttachedVehicle', function(plates)
         for k, v in pairs(plates) do
             Config.Plates[k].AttachedVehicle = v.AttachedVehicle
         end
     end)
 
-    QBCore.Functions.TriggerCallback('qb-vehicletuning:server:GetDrivingDistances', function(retval)
+    QBCore.Functions.TriggerCallback('qb-mechanicjob:server:GetDrivingDistances', function(retval)
         DrivingDistance = retval
     end)
 end)
@@ -603,7 +603,7 @@ RegisterNetEvent('QBCore:Client:SetDuty', function(duty)
     onDuty = duty
 end)
 
-RegisterNetEvent('qb-vehicletuning:client:SetAttachedVehicle', function(veh, key)
+RegisterNetEvent('qb-mechanicjob:client:SetAttachedVehicle', function(veh, key)
     if veh ~= false then
         Config.Plates[key].AttachedVehicle = veh
     else
@@ -611,7 +611,7 @@ RegisterNetEvent('qb-vehicletuning:client:SetAttachedVehicle', function(veh, key
     end
 end)
 
-RegisterNetEvent('qb-vehicletuning:client:RepaireeePart', function(part)
+RegisterNetEvent('qb-mechanicjob:client:RepaireeePart', function(part)
     local veh = Config.Plates[ClosestPlate].AttachedVehicle
     local plate = QBCore.Functions.GetPlate(veh)
     if part == "engine" then
@@ -874,7 +874,7 @@ CreateThread(function()
                                                 FreezeEntityPosition(veh, true)
                                                 Wait(500)
                                                 DoScreenFadeIn(250)
-                                                TriggerServerEvent('qb-vehicletuning:server:SetAttachedVehicle', veh, k)
+                                                TriggerServerEvent('qb-mechanicjob:server:SetAttachedVehicle', veh, k)
                                             end
                                         else
                                             QBCore.Functions.Notify("You Cannot Put Bicycles On The Platform!", "error")
