@@ -618,11 +618,7 @@ local function UnattachVehicle()
     Wait(500)
     DoScreenFadeIn(250)
     Config.Plates[ClosestPlate].AttachedVehicle = nil
-    TriggerServerEvent('qb-vehicletuning:server:SetAttachedVehicle', false, ClosestPlate)
-
-    DestroyVehiclePlateZone(ClosestPlate)
-    RegisterVehiclePlateZone(ClosestPlate, Config.Plates[ClosestPlate])
-    
+    TriggerServerEvent('qb-mechanicjob:server:SetAttachedVehicle', false, ClosestPlate)
 end
 
 local function SpawnListVehicle(model)
@@ -709,7 +705,7 @@ local function RepairPart(part)
                     countitem = (countitem - PartData.costs)
                     StashItems[indx].amount = countitem
                 end
-                TriggerEvent('qb-vehicletuning:client:RepaireeePart', part)
+                TriggerEvent('qb-mechanicjob:client:RepaireeePart', part)
                 TriggerServerEvent('qb-inventory:server:SaveStashItems', "mechanicstash", StashItems)
                 SetTimeout(250, function()
                     PartsMenu()
@@ -765,13 +761,13 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
             end
         end
     end)
-    QBCore.Functions.TriggerCallback('qb-vehicletuning:server:GetAttachedVehicle', function(plates)
+    QBCore.Functions.TriggerCallback('qb-mechanicjob:server:GetAttachedVehicle', function(plates)
         for k, v in pairs(plates) do
             Config.Plates[k].AttachedVehicle = v.AttachedVehicle
         end
     end)
 
-    QBCore.Functions.TriggerCallback('qb-vehicletuning:server:GetDrivingDistances', function(retval)
+    QBCore.Functions.TriggerCallback('qb-mechanicjob:server:GetDrivingDistances', function(retval)
         DrivingDistance = retval
     end)
 end)
@@ -801,7 +797,7 @@ RegisterNetEvent('QBCore:Client:SetDuty', function(duty)
     end
 end)
 
-RegisterNetEvent('qb-vehicletuning:client:SetAttachedVehicle', function(veh, key)
+RegisterNetEvent('qb-mechanicjob:client:SetAttachedVehicle', function(veh, key)
     if veh ~= false then
         Config.Plates[key].AttachedVehicle = veh
     else
@@ -809,7 +805,7 @@ RegisterNetEvent('qb-vehicletuning:client:SetAttachedVehicle', function(veh, key
     end
 end)
 
-RegisterNetEvent('qb-vehicletuning:client:RepaireeePart', function(part)
+RegisterNetEvent('qb-mechanicjob:client:RepaireeePart', function(part)
     local veh = Config.Plates[ClosestPlate].AttachedVehicle
     local plate = QBCore.Functions.GetPlate(veh)
     if part == "engine" then
@@ -1009,6 +1005,94 @@ CreateThread(function ()
                 if IsControlJustPressed(0, 38) then
                     TriggerServerEvent("QBCore:ToggleDuty")
                 end
+
+                if onDuty then
+                    if VehicleDistance < 20 then
+                        inRange = true
+                        DrawMarker(2, Config.Locations["vehicle"].x, Config.Locations["vehicle"].y, Config.Locations["vehicle"].z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.2, 210, 50, 9, 255, false, false, false, true, false, false, false)
+                        if VehicleDistance < 1 then
+                            local InVehicle = IsPedInAnyVehicle(PlayerPedId())
+
+                            if InVehicle then
+                                DrawText3Ds(Config.Locations["vehicle"].x, Config.Locations["vehicle"].y, Config.Locations["vehicle"].z, '[E] Hide Vehicle')
+                                if IsControlJustPressed(0, 38) then
+                                    DeleteVehicle(GetVehiclePedIsIn(PlayerPedId()))
+                                end
+                            else
+                                DrawText3Ds(Config.Locations["vehicle"].x, Config.Locations["vehicle"].y, Config.Locations["vehicle"].z, '[E] Get Vehicle')
+                                if IsControlJustPressed(0, 38) then
+                                    if IsControlJustPressed(0, 38) then
+                                        VehicleList()
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if OnDutyDistance < 20 then
+                    inRange = true
+                    DrawMarker(2, Config.Locations["duty"].x, Config.Locations["duty"].y, Config.Locations["duty"].z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.2, 210, 50, 9, 255, false, false, false, true, false, false, false)
+
+                    if OnDutyDistance < 1 then
+                        if onDuty then
+                            DrawText3Ds(Config.Locations["duty"].x, Config.Locations["duty"].y, Config.Locations["duty"].z, "[E] Off Duty")
+                        else
+                            DrawText3Ds(Config.Locations["duty"].x, Config.Locations["duty"].y, Config.Locations["duty"].z, "[E] On Duty")
+                        end
+                        if IsControlJustReleased(0, 38) then
+                            TriggerServerEvent("QBCore:ToggleDuty")
+                        end
+                    end
+                end
+
+                if onDuty then
+                    for k, v in pairs(Config.Plates) do
+                        if v.AttachedVehicle == nil then
+                            local PlateDistance = #(pos - vector3(v.coords.x, v.coords.y, v.coords.z))
+                            if PlateDistance < 20 then
+                                inRange = true
+                                DrawMarker(2, v.coords.x, v.coords.y, v.coords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.2, 255, 255, 255, 255, 0, 0, 0, 1, 0, 0, 0)
+                                if PlateDistance < 2 then
+                                    local veh = GetVehiclePedIsIn(PlayerPedId())
+                                    if IsPedInAnyVehicle(PlayerPedId()) then
+                                        if not IsThisModelABicycle(GetEntityModel(veh)) then
+                                            DrawText3Ds(v.coords.x, v.coords.y, v.coords.z + 0.3, "[E] Place The Vehicle On The Platform")
+                                            if IsControlJustPressed(0, 38) then
+                                                DoScreenFadeOut(150)
+                                                Wait(150)
+                                                Config.Plates[ClosestPlate].AttachedVehicle = veh
+                                                SetEntityCoords(veh, v.coords)
+                                                SetEntityHeading(veh, v.coords.w)
+                                                FreezeEntityPosition(veh, true)
+                                                Wait(500)
+                                                DoScreenFadeIn(250)
+                                                TriggerServerEvent('qb-mechanicjob:server:SetAttachedVehicle', veh, k)
+                                            end
+                                        else
+                                            QBCore.Functions.Notify("You Cannot Put Bicycles On The Platform!", "error")
+                                        end
+                                    end
+                                end
+                            end
+                        else
+                            local PlateDistance = #(pos - vector3(v.coords.x, v.coords.y, v.coords.z))
+                            if PlateDistance < 3 then
+                                inRange = true
+                                DrawText3Ds(v.coords.x, v.coords.y, v.coords.z, "[E] Open Menu")
+                                if IsControlJustPressed(0, 38) then
+                                    OpenMenu()
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if not inRange then
+                    Wait(1500)
+                end
+            else
+                Wait(1500)
             end
 
             if onDuty then
